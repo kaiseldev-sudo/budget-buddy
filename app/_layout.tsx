@@ -13,6 +13,7 @@ import { SplashScreen } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useTheme } from '@/hooks/useTheme';
 import { StyleSheet } from 'react-native';
+import { notificationService } from '@/lib/notifications';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -31,6 +32,8 @@ export default function RootLayout() {
 
   useEffect(() => {
     initialize();
+    // Initialize notifications
+    notificationService.initialize();
   }, []);
 
   useEffect(() => {

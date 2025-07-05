@@ -12,7 +12,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useTransactionStore } from '@/store/transactionStore';
 import { useTheme } from '@/hooks/useTheme';
 import { BarChart, LineChart } from 'react-native-chart-kit';
-import { TrendingUp, TrendingDown, DollarSign, Target } from 'lucide-react-native';
+import { TrendingUp, TrendingDown, PhilippinePeso, Target } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -94,10 +94,10 @@ export default function DashboardScreen() {
   });
 
   const chartConfig = {
-    backgroundGradientFrom: '#fff',
-    backgroundGradientTo: '#fff',
+    backgroundGradientFrom: theme.cardBackground,
+    backgroundGradientTo: theme.cardBackground,
     color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(55, 65, 81, ${opacity})`,
+    labelColor: (opacity = 1) => `rgba(${theme.textPrimary === '#F9FAFB' ? '249, 250, 251' : '17, 24, 39'}, ${opacity})`,
     decimalPlaces: 0,
     style: {
       borderRadius: 16,
@@ -105,7 +105,7 @@ export default function DashboardScreen() {
     propsForDots: {
       r: '6',
       strokeWidth: '2',
-      stroke: '#2563EB',
+      stroke: theme.primary,
     },
   };
 
@@ -123,12 +123,12 @@ export default function DashboardScreen() {
           <Card style={styles.balanceCard}>
             <View style={styles.balanceHeader}>
               <View style={styles.balanceIconContainer}>
-                <DollarSign size={24} color="#FFFFFF" />
+                <PhilippinePeso size={24} color="#FFFFFF" />
               </View>
               <Text style={styles.balanceLabel}>Total Balance</Text>
             </View>
             <Text style={styles.balanceAmount}>
-              ${monthlyData.balance.toLocaleString()}
+              ₱ {monthlyData.balance.toLocaleString()}
             </Text>
             <Text style={[
               styles.balanceChange,
@@ -166,51 +166,55 @@ export default function DashboardScreen() {
         {categoryChartData.length > 0 && (
           <Card style={styles.chartCard}>
             <Text style={[styles.chartTitle, { color: theme.textPrimary }]}>Spending by Category</Text>
-            <BarChart
-              data={{
-                labels: categoryChartData.map(cat => cat.name),
-                datasets: [{
-                  data: categoryChartData.map(cat => cat.amount),
-                }],
-              }}
-              width={width - 40}
-              height={220}
-              yAxisLabel="$"
-              yAxisSuffix=""
-              chartConfig={{
-                ...chartConfig,
-                color: (opacity = 1) => `rgba(239, 68, 68, ${opacity})`,
-              }}
-              verticalLabelRotation={30}
-              fromZero
-              showBarTops={true}
-              withInnerLines={false}
-              style={{ marginVertical: 8, borderRadius: 16 }}
-            />
+            <View style={styles.chartContainer}>
+              <BarChart
+                data={{
+                  labels: categoryChartData.map(cat => cat.name),
+                  datasets: [{
+                    data: categoryChartData.map(cat => cat.amount),
+                  }],
+                }}
+                width={width - 80}
+                height={220}
+                yAxisLabel="$"
+                yAxisSuffix=""
+                chartConfig={{
+                  ...chartConfig,
+                  color: (opacity = 1) => `rgba(239, 68, 68, ${opacity})`,
+                }}
+                verticalLabelRotation={30}
+                fromZero
+                showBarTops={true}
+                withInnerLines={false}
+                style={{ borderRadius: 16 }}
+              />
+            </View>
           </Card>
         )}
 
         {/* Weekly Spending - Line Chart */}
         <Card style={styles.chartCard}>
           <Text style={[styles.chartTitle, { color: theme.textPrimary }]}>This Week's Spending</Text>
-          <LineChart
-            data={{
-              labels: weeklyData.map(day => day.x),
-              datasets: [{
-                data: weeklyData.map(day => day.y),
-              }],
-            }}
-            width={width - 40}
-            height={220}
-            yAxisLabel="$"
-            chartConfig={{
-              ...chartConfig,
-              color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`,
-            }}
-            bezier
-            style={{ marginVertical: 8, borderRadius: 16 }}
-          />
-          <Text style={styles.chartSubtext}>
+          <View style={styles.chartContainer}>
+            <LineChart
+              data={{
+                labels: weeklyData.map(day => day.x),
+                datasets: [{
+                  data: weeklyData.map(day => day.y),
+                }],
+              }}
+              width={width - 80}
+              height={220}
+              yAxisLabel="$"
+              chartConfig={{
+                ...chartConfig,
+                color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`,
+              }}
+              bezier
+              style={{ borderRadius: 16 }}
+            />
+          </View>
+          <Text style={[styles.chartSubtext, { color: theme.textTertiary }]}>
             Total: ${weeklyData.reduce((sum, day) => sum + day.y, 0).toLocaleString()}
           </Text>
         </Card>
@@ -219,7 +223,7 @@ export default function DashboardScreen() {
         <Card style={styles.recentCard}>
           <Text style={[styles.chartTitle, { color: theme.textPrimary }]}>Recent Transactions</Text>
           {transactions.slice(0, 5).map((transaction) => (
-            <View key={transaction.id} style={styles.transactionItem}>
+            <View key={transaction.id} style={[styles.transactionItem, { borderBottomColor: theme.borderLight }]}>
               <View style={styles.transactionLeft}>
                 <View style={[
                   styles.transactionIcon,
@@ -344,7 +348,9 @@ const styles = StyleSheet.create({
   },
   chartContainer: {
     alignItems: 'center',
-    paddingVertical: 20,
+    justifyContent: 'center',
+    paddingVertical: 16,
+    overflow: 'hidden',
   },
   chartPlaceholder: {
     fontSize: 16,
@@ -355,7 +361,6 @@ const styles = StyleSheet.create({
   chartSubtext: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: '#9CA3AF',
   },
   recentCard: {
     marginBottom: 32,
@@ -366,7 +371,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
   },
   transactionLeft: {
     flexDirection: 'row',
@@ -387,12 +391,10 @@ const styles = StyleSheet.create({
   transactionDescription: {
     fontSize: 16,
     fontFamily: 'Inter-Medium',
-    color: '#111827',
   },
   transactionCategory: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: '#6B7280',
     marginTop: 2,
   },
   transactionAmount: {

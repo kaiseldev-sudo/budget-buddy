@@ -12,7 +12,7 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { useTransactionStore } from '@/store/transactionStore';
 import { useTheme } from '@/hooks/useTheme';
 import { LineChart, BarChart } from 'react-native-chart-kit';
-import { TrendingUp, TrendingDown, Calendar, DollarSign } from 'lucide-react-native';
+import { TrendingUp, TrendingDown, Calendar, PhilippinePeso } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -44,18 +44,26 @@ export default function ReportsScreen() {
 
   useEffect(() => {
     if (transactions.length > 0 && categories.length > 0) {
-      // Generate last 6 months of data
-      const months = [];
-      const currentDate = new Date();
+      // Find the date range of transactions
+      const transactionDates = transactions.map(t => new Date(t.date));
+      const earliestDate = new Date(Math.min(...transactionDates.map(d => d.getTime())));
+      const latestDate = new Date(Math.max(...transactionDates.map(d => d.getTime())));
       
-      for (let i = 5; i >= 0; i--) {
-        const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
-        const monthName = date.toLocaleDateString('en', { month: 'short' });
+      // Generate months from earliest transaction to current date (or latest transaction)
+      const months = [];
+      const endDate = new Date(latestDate.getFullYear(), latestDate.getMonth(), 1);
+      const startDate = new Date(earliestDate.getFullYear(), earliestDate.getMonth(), 1);
+      
+      let currentDate = new Date(startDate);
+      
+      while (currentDate <= endDate) {
+        const monthName = currentDate.toLocaleDateString('en', { month: 'short' });
+        const year = currentDate.getFullYear();
         
         const monthTransactions = transactions.filter(transaction => {
           const transactionDate = new Date(transaction.date);
-          return transactionDate.getMonth() === date.getMonth() &&
-                 transactionDate.getFullYear() === date.getFullYear();
+          return transactionDate.getMonth() === currentDate.getMonth() &&
+                 transactionDate.getFullYear() === currentDate.getFullYear();
         });
 
         const income = monthTransactions
@@ -67,11 +75,14 @@ export default function ReportsScreen() {
           .reduce((sum, t) => sum + t.amount, 0);
 
         months.push({
-          x: monthName,
+          x: `${monthName} ${year}`,
           y: expenses,
           income,
           expenses,
         });
+        
+        // Move to next month
+        currentDate.setMonth(currentDate.getMonth() + 1);
       }
 
       setMonthlyData(months);
@@ -125,8 +136,9 @@ export default function ReportsScreen() {
   }
 
   // Calculate insights
-  const averageMonthlySpending = monthlyData.length > 0 
-    ? monthlyData.reduce((sum, month) => sum + month.y, 0) / monthlyData.length 
+  const monthsWithData = monthlyData.filter(month => month.y > 0 || month.income > 0);
+  const averageMonthlySpending = monthsWithData.length > 0 
+    ? monthsWithData.reduce((sum, month) => sum + month.y, 0) / monthsWithData.length 
     : 0;
   
   const topCategory = categorySpending[0];
@@ -160,7 +172,7 @@ export default function ReportsScreen() {
         <View style={styles.summarySection}>
           <Card style={styles.summaryCard}>
             <View style={styles.summaryHeader}>
-              <DollarSign size={20} color={theme.primary} />
+              <PhilippinePeso size={20} color={theme.primary} />
               <Text style={[styles.summaryTitle, { color: theme.textSecondary }]}>This Month</Text>
             </View>
             <Text style={[styles.summaryAmount, { color: theme.textPrimary }]}>${(currentMonth?.y || 0).toLocaleString()}</Text>
@@ -187,30 +199,34 @@ export default function ReportsScreen() {
             <Text style={[styles.summaryAmount, { color: theme.textPrimary }]}>
               ${Math.round(averageMonthlySpending).toLocaleString()}
             </Text>
-            <Text style={[styles.summarySubtext, { color: theme.textTertiary }]}>Based on 6 months</Text>
+            <Text style={[styles.summarySubtext, { color: theme.textTertiary }]}>
+              Based on {monthsWithData.length} month{monthsWithData.length !== 1 ? 's' : ''} of data
+            </Text>
           </Card>
         </View>
 
         {/* Spending Trend - Line Chart */}
         <Card style={styles.chartCard}>
           <Text style={[styles.chartTitle, { color: theme.textPrimary }]}>Spending Trend</Text>
-          <LineChart
-            data={{
-              labels: monthlyData.map(month => month.x),
-              datasets: [{
-                data: monthlyData.map(month => month.y),
-              }],
-            }}
-            width={width - 40}
-            height={220}
-            yAxisLabel="$"
-            chartConfig={{
-              ...chartConfig,
-              color: (opacity = 1) => `rgba(239, 68, 68, ${opacity})`,
-            }}
-            bezier
-            style={{ marginVertical: 8, borderRadius: 16 }}
-          />
+          <View style={styles.chartContainer}>
+            <LineChart
+              data={{
+                labels: monthlyData.map(month => month.x),
+                datasets: [{
+                  data: monthlyData.map(month => month.y),
+                }],
+              }}
+              width={width - 80}
+              height={220}
+              yAxisLabel="$"
+              chartConfig={{
+                ...chartConfig,
+                color: (opacity = 1) => `rgba(239, 68, 68, ${opacity})`,
+              }}
+              bezier
+              style={{ borderRadius: 16, alignSelf: 'center' }}
+            />
+          </View>
           <Text style={[styles.chartSubtext, { color: theme.textTertiary }]}>
             Average monthly spending: ${Math.round(averageMonthlySpending).toLocaleString()}
           </Text>
@@ -219,31 +235,33 @@ export default function ReportsScreen() {
         {/* Income vs Expenses - Bar Chart */}
         <Card style={styles.chartCard}>
           <Text style={[styles.chartTitle, { color: theme.textPrimary }]}>Income vs Expenses</Text>
-          <BarChart
-            data={{
-              labels: monthlyData.map(month => month.x),
-              datasets: [
-                {
-                  data: monthlyData.map(month => month.income),
-                  color: () => '#10B981',
-                },
-                {
-                  data: monthlyData.map(month => month.expenses),
-                  color: () => '#EF4444',
-                },
-              ],
-            }}
-            width={width - 40}
-            height={220}
-            yAxisLabel="$"
-            yAxisSuffix=""
-            chartConfig={chartConfig}
-            verticalLabelRotation={30}
-            fromZero
-            showBarTops={true}
-            withInnerLines={false}
-            style={{ marginVertical: 8, borderRadius: 16 }}
-          />
+          <View style={styles.chartContainer}>
+            <BarChart
+              data={{
+                labels: monthlyData.map(month => month.x),
+                datasets: [
+                  {
+                    data: monthlyData.map(month => month.income),
+                    color: () => '#10B981',
+                  },
+                  {
+                    data: monthlyData.map(month => month.expenses),
+                    color: () => '#EF4444',
+                  },
+                ],
+              }}
+              width={width - 80}
+              height={220}
+              yAxisLabel="$"
+              yAxisSuffix=""
+              chartConfig={chartConfig}
+              verticalLabelRotation={30}
+              fromZero
+              showBarTops={true}
+              withInnerLines={false}
+              style={{ borderRadius: 16, alignSelf: 'center' }}
+            />
+          </View>
           <Text style={[styles.chartSubtext, { color: theme.textTertiary }]}>
             Current month: ${(currentMonth?.income || 0).toLocaleString()} income, ${(currentMonth?.expenses || 0).toLocaleString()} expenses
           </Text>
@@ -401,8 +419,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   chartContainer: {
-    alignItems: 'center',
-    paddingVertical: 20,
+    justifyContent: 'center',
+    paddingVertical: 16,
+    overflow: 'hidden',
   },
   chartPlaceholder: {
     fontSize: 16,

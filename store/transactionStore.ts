@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Transaction, Category, Budget } from '@/types/database';
 import { supabase } from '@/lib/supabase';
+import { notificationService } from '@/lib/notifications';
 
 interface TransactionState {
   transactions: Transaction[];
@@ -87,11 +88,21 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return { error: 'User not authenticated' };
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('transactions')
-        .insert([{ ...transaction, user_id: user.id }]);
+        .insert([{ ...transaction, user_id: user.id }])
+        .select(`
+          *,
+          category:categories(*)
+        `)
+        .single();
 
       if (error) return { error: error.message };
+
+      // Send notification for new transaction
+      if (data) {
+        await notificationService.notifyTransactionAdded(data);
+      }
 
       // Refresh transactions
       get().fetchTransactions();
@@ -146,11 +157,21 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return { error: 'User not authenticated' };
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('budgets')
-        .insert([{ ...budget, user_id: user.id }]);
+        .insert([{ ...budget, user_id: user.id }])
+        .select(`
+          *,
+          category:categories(*)
+        `)
+        .single();
 
       if (error) return { error: error.message };
+
+      // Send notification for new budget
+      if (data) {
+        await notificationService.notifyBudgetCreated(data);
+      }
 
       // Refresh budgets
       get().fetchBudgets();

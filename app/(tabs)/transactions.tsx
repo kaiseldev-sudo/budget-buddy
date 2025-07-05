@@ -7,19 +7,22 @@ import {
   FlatList,
   TouchableOpacity,
   Alert,
+  Modal,
+  Image,
 } from 'react-native';
 import { Card } from '@/components/Card';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { useTransactionStore } from '@/store/transactionStore';
 import { useTheme } from '@/hooks/useTheme';
 import { Transaction } from '@/types/database';
-import { Search, Filter, Trash2 } from 'lucide-react-native';
+import { Search, Filter, Trash2, Image as ImageIcon } from 'lucide-react-native';
 
 export default function TransactionsScreen() {
   const { transactions, loading, fetchTransactions, deleteTransaction } = useTransactionStore();
   const theme = useTheme();
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [filter, setFilter] = useState<'all' | 'income' | 'expense'>('all');
+  const [selectedReceipt, setSelectedReceipt] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTransactions();
@@ -82,12 +85,22 @@ export default function TransactionsScreen() {
             {transaction.category?.type === 'income' ? '+' : '-'}
             ${transaction.amount.toLocaleString()}
           </Text>
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => handleDeleteTransaction(transaction)}
-          >
-            <Trash2 size={16} color={theme.error} />
-          </TouchableOpacity>
+          <View style={styles.transactionActions}>
+            {transaction.receipt_url && (
+              <TouchableOpacity 
+                style={styles.receiptButton}
+                onPress={() => setSelectedReceipt(transaction.receipt_url!)}
+              >
+                <ImageIcon size={16} color={theme.primary} />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => handleDeleteTransaction(transaction)}
+            >
+              <Trash2 size={16} color={theme.error} />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Card>
@@ -102,7 +115,7 @@ export default function TransactionsScreen() {
       <View style={styles.header}>
         <Text style={[styles.title, { color: theme.textPrimary }]}>Transactions</Text>
         <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Your financial activity</Text>
-        
+      </View>
         <View style={styles.filterContainer}>
           {(['all', 'income', 'expense'] as const).map((filterType) => (
             <TouchableOpacity
@@ -123,7 +136,6 @@ export default function TransactionsScreen() {
             </TouchableOpacity>
           ))}
         </View>
-      </View>
 
       <FlatList
         data={filteredTransactions}
@@ -140,6 +152,35 @@ export default function TransactionsScreen() {
           </View>
         }
       />
+
+      {/* Receipt Image Modal */}
+      <Modal
+        visible={!!selectedReceipt}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setSelectedReceipt(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
+              <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>Receipt</Text>
+              <TouchableOpacity 
+                style={styles.closeModalButton}
+                onPress={() => setSelectedReceipt(null)}
+              >
+                <Text style={[styles.closeModalText, { color: theme.textSecondary }]}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            {selectedReceipt && (
+              <Image 
+                source={{ uri: selectedReceipt }} 
+                style={styles.receiptImage}
+                resizeMode="contain"
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -153,11 +194,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 24,
+    
   },
   title: {
     fontSize: 28,
     fontFamily: 'Inter-Bold',
-    marginBottom: 20,
+    marginBottom: 4,
   },
   subtitle: {
     fontSize: 14,
@@ -167,6 +209,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     marginBottom: 20,
+    paddingHorizontal: 20,
   },
   filterButton: {
     flex: 1,
@@ -234,6 +277,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
     marginBottom: 4,
   },
+  transactionActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  receiptButton: {
+    padding: 4,
+  },
   deleteButton: {
     padding: 4,
   },
@@ -251,5 +302,39 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter-Regular',
     textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '90%',
+    height: '80%',
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontFamily: 'Inter-SemiBold',
+  },
+  closeModalButton: {
+    padding: 8,
+  },
+  closeModalText: {
+    fontSize: 20,
+    fontFamily: 'Inter-Medium',
+  },
+  receiptImage: {
+    flex: 1,
+    width: '100%',
   },
 });

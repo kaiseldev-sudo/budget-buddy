@@ -7,14 +7,16 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Image,
 } from 'react-native';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { useTransactionStore } from '@/store/transactionStore';
 import { Category } from '@/types/database';
-import { Camera, Calendar, DollarSign, FileText } from 'lucide-react-native';
-import { useCameraPermissions, CameraView } from 'expo-camera';
+import { Upload, Calendar, PhilippinePeso, FileText, Image as ImageIcon } from 'lucide-react-native';
+import { useTheme } from '@/hooks/useTheme';
+import { launchImageLibraryAsync, requestMediaLibraryPermissionsAsync } from 'expo-image-picker';
 
 const defaultCategories: Omit<Category, 'id' | 'user_id' | 'created_at'>[] = [
   // Income categories
@@ -41,10 +43,11 @@ export default function AddTransactionScreen() {
   const [transactionType, setTransactionType] = useState<'income' | 'expense'>('expense');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
-  const [showCamera, setShowCamera] = useState(false);
+  const [receiptImage, setReceiptImage] = useState<string | null>(null);
+  const [imageLoading, setImageLoading] = useState(false);
 
   const { categories, addTransaction, fetchCategories } = useTransactionStore();
-  const [permission, requestPermission] = useCameraPermissions();
+  const theme = useTheme();
 
   useEffect(() => {
     fetchCategories();
@@ -71,6 +74,7 @@ export default function AddTransactionScreen() {
       description,
       category_id: selectedCategory.id || selectedCategory.name,
       date,
+      receipt_url: receiptImage || undefined, // Add receipt image to transaction
     });
     setLoading(false);
 
@@ -83,53 +87,69 @@ export default function AddTransactionScreen() {
       setDescription('');
       setSelectedCategory(null);
       setDate(new Date().toISOString().split('T')[0]);
+      setReceiptImage(null);
     }
   };
 
-  const openCamera = async () => {
-    if (!permission?.granted) {
-      const result = await requestPermission();
-      if (!result.granted) {
-        Alert.alert('Permission Required', 'Camera permission is required to take receipt photos');
+  const pickImage = async () => {
+    try {
+      setImageLoading(true);
+      
+      // Request permission
+      const { status } = await requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Permission to access camera roll is required to upload receipt photos');
         return;
       }
+
+      // Launch image picker with fallback options
+      let result;
+      try {
+        result = await launchImageLibraryAsync({
+          allowsEditing: true,
+          quality: 0.7,
+          allowsMultipleSelection: false,
+        });
+      } catch (pickerError) {
+        console.error('Image picker launch error:', pickerError);
+        // Try with minimal options as fallback
+        result = await launchImageLibraryAsync({
+          quality: 0.7,
+        });
+      }
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const selectedAsset = result.assets[0];
+        if (selectedAsset && selectedAsset.uri) {
+          setReceiptImage(selectedAsset.uri);
+        }
+      }
+    } catch (error) {
+      console.error('Image picker error:', error);
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
+    } finally {
+      setImageLoading(false);
     }
-    setShowCamera(true);
   };
 
-  if (showCamera) {
-    return (
-      <View style={styles.cameraContainer}>
-        <CameraView style={styles.camera} facing="back" />
-        <View style={styles.cameraOverlay}>
-          <TouchableOpacity
-            style={styles.closeCamera}
-            onPress={() => setShowCamera(false)}
-          >
-            <Text style={styles.closeCameraText}>Close</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.captureButton}>
-            <View style={styles.captureButtonInner} />
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
+  const removeImage = () => {
+    setReceiptImage(null);
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.title}>Add Transaction</Text>
+          <Text style={[styles.title, { color: theme.textPrimary }]}>Add Transaction</Text>
         </View>
 
         <Card style={styles.formCard}>
           {/* Transaction Type Toggle */}
-          <View style={styles.typeToggle}>
+          <View style={[styles.typeToggle, { backgroundColor: theme.surfaceSecondary }]}>
             <TouchableOpacity
               style={[
                 styles.typeButton,
-                transactionType === 'income' && styles.activeTypeButton,
+                transactionType === 'income' && [styles.activeTypeButton, { backgroundColor: theme.surface }],
               ]}
               onPress={() => {
                 setTransactionType('income');
@@ -138,7 +158,8 @@ export default function AddTransactionScreen() {
             >
               <Text style={[
                 styles.typeButtonText,
-                transactionType === 'income' && styles.activeTypeButtonText,
+                { color: theme.textSecondary },
+                transactionType === 'income' && [styles.activeTypeButtonText, { color: theme.primary }],
               ]}>
                 Income
               </Text>
@@ -146,7 +167,7 @@ export default function AddTransactionScreen() {
             <TouchableOpacity
               style={[
                 styles.typeButton,
-                transactionType === 'expense' && styles.activeTypeButton,
+                transactionType === 'expense' && [styles.activeTypeButton, { backgroundColor: theme.surface }],
               ]}
               onPress={() => {
                 setTransactionType('expense');
@@ -155,7 +176,8 @@ export default function AddTransactionScreen() {
             >
               <Text style={[
                 styles.typeButtonText,
-                transactionType === 'expense' && styles.activeTypeButtonText,
+                { color: theme.textSecondary },
+                transactionType === 'expense' && [styles.activeTypeButtonText, { color: theme.primary }],
               ]}>
                 Expense
               </Text>
@@ -169,7 +191,7 @@ export default function AddTransactionScreen() {
             onChangeText={setAmount}
             placeholder="0.00"
             keyboardType="numeric"
-            leftIcon={<DollarSign size={20} color="#9CA3AF" />}
+            leftIcon={<PhilippinePeso size={20} color={theme.textTertiary} />}
           />
 
           {/* Description Input */}
@@ -178,7 +200,7 @@ export default function AddTransactionScreen() {
             value={description}
             onChangeText={setDescription}
             placeholder="Enter description"
-            leftIcon={<FileText size={20} color="#9CA3AF" />}
+            leftIcon={<FileText size={20} color={theme.textTertiary} />}
           />
 
           {/* Date Input */}
@@ -187,33 +209,62 @@ export default function AddTransactionScreen() {
             value={date}
             onChangeText={setDate}
             placeholder="YYYY-MM-DD"
-            leftIcon={<Calendar size={20} color="#9CA3AF" />}
+            leftIcon={<Calendar size={20} color={theme.textTertiary} />}
           />
 
           {/* Receipt Photo */}
-          <TouchableOpacity style={styles.receiptButton} onPress={openCamera}>
-            <Camera size={20} color="#6B7280" />
-            <Text style={styles.receiptButtonText}>Add Receipt Photo</Text>
-          </TouchableOpacity>
+          {receiptImage ? (
+            <View style={styles.receiptImageContainer}>
+              <Image 
+                source={{ uri: receiptImage }} 
+                style={styles.receiptImage}
+                resizeMode="contain"
+                onError={() => {
+                  Alert.alert('Error', 'Failed to load image. Please try selecting another image.');
+                  setReceiptImage(null);
+                }}
+              />
+              <TouchableOpacity 
+                style={[styles.removeImageButton, { backgroundColor: theme.error }]} 
+                onPress={removeImage}
+              >
+                <Text style={[styles.removeImageText, { color: theme.textInverse }]}>Remove</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity 
+              style={[styles.receiptButton, { borderColor: theme.border }]} 
+              onPress={pickImage}
+              disabled={imageLoading}
+            >
+              <Upload size={20} color={imageLoading ? theme.textTertiary : theme.textSecondary} />
+              <Text style={[styles.receiptButtonText, { color: imageLoading ? theme.textTertiary : theme.textSecondary }]}>
+                {imageLoading ? 'Loading...' : 'Upload Receipt Photo'}
+              </Text>
+            </TouchableOpacity>
+          )}
         </Card>
 
         {/* Category Selection */}
         <Card style={styles.categoryCard}>
-          <Text style={styles.categoryTitle}>Select Category</Text>
+          <Text style={[styles.categoryTitle, { color: theme.textPrimary }]}>Select Category</Text>
           <View style={styles.categoryGrid}>
             {filteredCategories.map((category) => (
               <TouchableOpacity
                 key={category.name}
                 style={[
                   styles.categoryItem,
-                  selectedCategory?.name === category.name && styles.selectedCategory,
+                  selectedCategory?.name === category.name && [styles.selectedCategory, { 
+                    borderColor: theme.primary, 
+                    backgroundColor: theme.background === '#111827' ? theme.surfaceSecondary : '#EFF6FF' 
+                  }],
                 ]}
                 onPress={() => setSelectedCategory(category as Category)}
               >
                 <View style={[styles.categoryIcon, { backgroundColor: category.color }]}>
                   <Text style={styles.categoryIconText}>{category.icon}</Text>
                 </View>
-                <Text style={styles.categoryName}>{category.name}</Text>
+                <Text style={[styles.categoryName, { color: theme.textSecondary }]}>{category.name}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -234,7 +285,6 @@ export default function AddTransactionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
     paddingTop: 16
   },
   content: {
@@ -248,14 +298,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontFamily: 'Inter-Bold',
-    color: '#111827',
   },
   formCard: {
     marginBottom: 24,
   },
   typeToggle: {
     flexDirection: 'row',
-    backgroundColor: '#F3F4F6',
     borderRadius: 12,
     padding: 4,
     marginBottom: 24,
@@ -267,7 +315,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   activeTypeButton: {
-    backgroundColor: '#FFFFFF',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -280,17 +327,14 @@ const styles = StyleSheet.create({
   typeButtonText: {
     fontSize: 16,
     fontFamily: 'Inter-Medium',
-    color: '#6B7280',
   },
   activeTypeButtonText: {
-    color: '#2563EB',
   },
   receiptButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#D1D5DB',
     borderStyle: 'dashed',
     borderRadius: 12,
     paddingVertical: 16,
@@ -299,7 +343,6 @@ const styles = StyleSheet.create({
   receiptButtonText: {
     fontSize: 14,
     fontFamily: 'Inter-Medium',
-    color: '#6B7280',
     marginLeft: 8,
   },
   categoryCard: {
@@ -308,7 +351,6 @@ const styles = StyleSheet.create({
   categoryTitle: {
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
-    color: '#111827',
     marginBottom: 16,
   },
   categoryGrid: {
@@ -325,8 +367,6 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   selectedCategory: {
-    borderColor: '#2563EB',
-    backgroundColor: '#EFF6FF',
   },
   categoryIcon: {
     width: 48,
@@ -342,50 +382,28 @@ const styles = StyleSheet.create({
   categoryName: {
     fontSize: 12,
     fontFamily: 'Inter-Medium',
-    color: '#374151',
     textAlign: 'center',
   },
   addButton: {
     marginBottom: 32,
   },
-  cameraContainer: {
-    flex: 1,
-  },
-  camera: {
-    flex: 1,
-  },
-  cameraOverlay: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    justifyContent: 'flex-end',
+  receiptImageContainer: {
+    marginTop: 8,
     alignItems: 'center',
-    paddingBottom: 40,
   },
-  closeCamera: {
-    position: 'absolute',
-    top: 60,
-    right: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  receiptImage: {
+    width: '100%',
+    height: 300,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  removeImageButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 8,
   },
-  closeCameraText: {
-    color: '#FFFFFF',
+  removeImageText: {
+    fontSize: 14,
     fontFamily: 'Inter-Medium',
-  },
-  captureButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  captureButtonInner: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#2563EB',
   },
 });

@@ -230,7 +230,7 @@ export default function BudgetsScreen() {
                 Create your first budget to start tracking your spending against limits.
               </Text>
               <TouchableOpacity style={[styles.emptyButton, { backgroundColor: theme.primary }]} onPress={handleAddBudget}>
-                <Text style={styles.emptyButtonText}>Create Budget</Text>
+                <Text style={[styles.emptyButtonText, { color: theme.textInverse }]}>Create Budget</Text>
               </TouchableOpacity>
             </Card>
           ) : (
@@ -459,7 +459,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   emptyButtonText: {
-    color: '#FFFFFF',
     fontSize: 14,
     fontFamily: 'Inter-SemiBold',
   },
@@ -559,7 +558,6 @@ const styles = StyleSheet.create({
   chartTitle: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
-    color: '#111827',
     marginBottom: 12,
   },
   pieRow: {
@@ -594,6 +592,5 @@ const styles = StyleSheet.create({
   },
   pieLegendText: {
     fontSize: 14,
-    color: '#374151',
   },
 });

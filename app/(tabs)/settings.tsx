@@ -15,6 +15,9 @@ import { useThemeMode } from '@/hooks/useTheme';
 import { router } from 'expo-router';
 import { User, Bell, Shield, Download, Moon, CircleHelp as HelpCircle, LogOut, ChevronRight } from 'lucide-react-native';
 import ThemeModal from '@/components/ThemeModal';
+import ProfileModal from '@/components/ProfileModal';
+import NotificationModal from '@/components/NotificationModal';
+import ExportModal from '@/components/ExportModal';
 
 const settingsItems = [
   {
@@ -66,6 +69,9 @@ export default function SettingsScreen() {
   const theme = useTheme();
   const { mode } = useThemeMode();
   const [themeModalVisible, setThemeModalVisible] = useState(false);
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
+  const [notificationModalVisible, setNotificationModalVisible] = useState(false);
+  const [exportModalVisible, setExportModalVisible] = useState(false);
 
   const handleSignOut = () => {
     Alert.alert(
@@ -88,16 +94,16 @@ export default function SettingsScreen() {
   const handleSettingPress = (settingId: string) => {
     switch (settingId) {
       case 'profile':
-        Alert.alert('Profile', 'Profile settings coming soon!');
+        setProfileModalVisible(true);
         break;
       case 'notifications':
-        Alert.alert('Notifications', 'Notification settings coming soon!');
+        setNotificationModalVisible(true);
         break;
       case 'security':
         Alert.alert('Security', 'Security settings coming soon!');
         break;
       case 'export':
-        Alert.alert('Export Data', 'Data export feature coming soon!');
+        setExportModalVisible(true);
         break;
       case 'appearance':
         setThemeModalVisible(true);
@@ -118,8 +124,8 @@ export default function SettingsScreen() {
         {/* User Profile Card */}
         <Card style={styles.profileCard}>
           <View style={styles.profileHeader}>
-            <View style={styles.profileAvatar}>
-              <Text style={styles.profileAvatarText}>
+            <View style={[styles.profileAvatar, { backgroundColor: theme.primary }]}>
+              <Text style={[styles.profileAvatarText, { color: theme.textInverse }]}>
                 {user?.user_metadata?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
               </Text>
             </View>
@@ -166,10 +172,10 @@ export default function SettingsScreen() {
         <TouchableOpacity onPress={handleSignOut} activeOpacity={0.7}>
           <Card style={styles.signOutCard}>
             <View style={styles.signOutContent}>
-              <View style={styles.signOutIcon}>
-                <LogOut size={20} color="#EF4444" />
+              <View style={[styles.signOutIcon, { backgroundColor: theme.background === '#111827' ? '#374151' : '#FEF2F2' }]}>
+                <LogOut size={20} color={theme.error} />
               </View>
-              <Text style={styles.signOutText}>Sign Out</Text>
+              <Text style={[styles.signOutText, { color: theme.error }]}>Sign Out</Text>
             </View>
           </Card>
         </TouchableOpacity>
@@ -185,6 +191,24 @@ export default function SettingsScreen() {
       <ThemeModal 
         visible={themeModalVisible} 
         onClose={() => setThemeModalVisible(false)} 
+      />
+      
+      {/* Profile Modal */}
+      <ProfileModal
+        visible={profileModalVisible}
+        onClose={() => setProfileModalVisible(false)}
+      />
+      
+      {/* Notification Modal */}
+      <NotificationModal
+        visible={notificationModalVisible}
+        onClose={() => setNotificationModalVisible(false)}
+      />
+      
+      {/* Export Modal */}
+      <ExportModal
+        visible={exportModalVisible}
+        onClose={() => setExportModalVisible(false)}
       />
     </SafeAreaView>
   );
@@ -218,7 +242,6 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#2563EB',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
@@ -226,7 +249,6 @@ const styles = StyleSheet.create({
   profileAvatarText: {
     fontSize: 24,
     fontFamily: 'Inter-Bold',
-    color: '#FFFFFF',
     textTransform: 'uppercase',
   },
   profileInfo: {
@@ -292,7 +314,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FEF2F2',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
@@ -300,7 +321,6 @@ const styles = StyleSheet.create({
   signOutText: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
-    color: '#EF4444',
   },
   appInfo: {
     alignItems: 'center',
