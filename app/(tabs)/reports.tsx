@@ -161,10 +161,9 @@ export default function ReportsScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: theme.textPrimary }]}>Reports</Text>
+        <View style={styles.contentHeader}>
           <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Insights into your spending patterns</Text>
         </View>
 
@@ -348,20 +347,19 @@ export default function ReportsScreen() {
           </View>
         </Card>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 16
   },
   content: {
     flex: 1,
     paddingHorizontal: 20,
   },
-  header: {
+  contentHeader: {
     paddingTop: 20,
     paddingBottom: 24,
   },

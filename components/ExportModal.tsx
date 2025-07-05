@@ -27,7 +27,6 @@ import {
   Mail
 } from 'lucide-react-native';
 import * as FileSystem from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
 import * as Print from 'expo-print';
 
 interface ExportModalProps {
@@ -90,10 +89,8 @@ export default function ExportModal({ visible, onClose }: ExportModalProps) {
         case 'pdf':
           const html = exportService.generatePDFHTML(exportData);
           const pdfUri = await Print.printToFileAsync({ html });
-          await Sharing.shareAsync(pdfUri.uri, {
-            mimeType: exportService.getMimeType('pdf'),
-            dialogTitle: 'Export Budget Data',
-          });
+          // PDF saved to device, user can access it from file manager
+          Alert.alert('Success', 'PDF exported successfully! Check your device files.');
           setLoading(false);
           return;
         default:
@@ -104,11 +101,8 @@ export default function ExportModal({ visible, onClose }: ExportModalProps) {
       const fileUri = `${FileSystem.documentDirectory}${filename}`;
       await FileSystem.writeAsStringAsync(fileUri, content);
 
-      // Share file
-      await Sharing.shareAsync(fileUri, {
-        mimeType,
-        dialogTitle: 'Export Budget Data',
-      });
+      // File saved to device, user can access it from file manager
+      Alert.alert('Success', `File exported successfully! Check your device files.`);
 
       Alert.alert('Success', 'Data exported successfully!');
       onClose();

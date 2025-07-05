@@ -110,10 +110,10 @@ export default function DashboardScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
+        {/* Greeting Section */}
+        <View style={styles.greetingSection}>
           <Text style={[styles.greeting, { color: theme.textSecondary }]}>Good morning,</Text>
           <Text style={[styles.userName, { color: theme.textPrimary }]}>{user?.user_metadata?.full_name || 'User'}</Text>
         </View>
@@ -253,21 +253,20 @@ export default function DashboardScreen() {
           ))}
         </Card>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 16
   },
   content: {
     flex: 1,
     paddingHorizontal: 20,
   },
-  header: {
-    paddingTop: 20,
+  greetingSection: {
+    paddingTop: 10,
     paddingBottom: 24,
   },
   greeting: {

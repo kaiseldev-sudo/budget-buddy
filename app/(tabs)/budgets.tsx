@@ -163,7 +163,7 @@ export default function BudgetsScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView 
         style={styles.content} 
         showsVerticalScrollIndicator={false}
@@ -171,8 +171,7 @@ export default function BudgetsScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: theme.textPrimary }]}>Budgets</Text>
+        <View style={styles.contentHeader}>
           <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Track your spending against set limits</Text>
           <TouchableOpacity style={[styles.addButton, { backgroundColor: theme.primary }]} onPress={handleAddBudget}>
             <Plus size={20} color="#FFFFFF" />
@@ -328,7 +327,7 @@ export default function BudgetsScreen() {
         budget={editingBudget}
         isEditing={!!editingBudget}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -351,13 +350,12 @@ const getChartConfig = (theme: any) => ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 16
   },
   content: {
     flex: 1,
     paddingHorizontal: 20,
   },
-  header: {
+  contentHeader: {
     paddingTop: 20,
     paddingBottom: 24,
   },

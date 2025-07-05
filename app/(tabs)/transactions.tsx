@@ -111,31 +111,27 @@ export default function TransactionsScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.textPrimary }]}>Transactions</Text>
-        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Your financial activity</Text>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={styles.filterContainer}>
+        {(['all', 'income', 'expense'] as const).map((filterType) => (
+          <TouchableOpacity
+            key={filterType}
+            style={[
+              styles.filterButton,
+              { backgroundColor: filter === filterType ? theme.primary : theme.surfaceSecondary },
+              { borderColor: theme.border }
+            ]}
+            onPress={() => setFilter(filterType)}
+          >
+            <Text style={[
+              styles.filterButtonText,
+              { color: filter === filterType ? theme.textInverse : theme.textSecondary }
+            ]}>
+              {filterType.charAt(0).toUpperCase() + filterType.slice(1)}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
-        <View style={styles.filterContainer}>
-          {(['all', 'income', 'expense'] as const).map((filterType) => (
-            <TouchableOpacity
-              key={filterType}
-              style={[
-                styles.filterButton,
-                { backgroundColor: filter === filterType ? theme.primary : theme.surfaceSecondary },
-                { borderColor: theme.border }
-              ]}
-              onPress={() => setFilter(filterType)}
-            >
-              <Text style={[
-                styles.filterButtonText,
-                { color: filter === filterType ? theme.textInverse : theme.textSecondary }
-              ]}>
-                {filterType.charAt(0).toUpperCase() + filterType.slice(1)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
 
       <FlatList
         data={filteredTransactions}
@@ -181,20 +177,13 @@ export default function TransactionsScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 16
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 24,
-    
   },
   title: {
     fontSize: 28,
@@ -208,8 +197,8 @@ const styles = StyleSheet.create({
   filterContainer: {
     flexDirection: 'row',
     gap: 8,
-    marginBottom: 20,
     paddingHorizontal: 20,
+    paddingVertical: 20,
   },
   filterButton: {
     flex: 1,
@@ -224,8 +213,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
   },
   list: {
-    flex: 1,
     paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   transactionCard: {
     marginBottom: 12,

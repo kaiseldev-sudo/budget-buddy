@@ -18,23 +18,7 @@ import { Upload, Calendar, PhilippinePeso, FileText, Image as ImageIcon } from '
 import { useTheme } from '@/hooks/useTheme';
 import { launchImageLibraryAsync, requestMediaLibraryPermissionsAsync } from 'expo-image-picker';
 
-const defaultCategories: Omit<Category, 'id' | 'user_id' | 'created_at'>[] = [
-  // Income categories
-  { name: 'Salary', color: '#10B981', icon: '💰', type: 'income' },
-  { name: 'Freelance', color: '#3B82F6', icon: '💼', type: 'income' },
-  { name: 'Investment', color: '#8B5CF6', icon: '📈', type: 'income' },
-  { name: 'Gift', color: '#F59E0B', icon: '🎁', type: 'income' },
-  
-  // Expense categories
-  { name: 'Food & Dining', color: '#EF4444', icon: '🍕', type: 'expense' },
-  { name: 'Transportation', color: '#06B6D4', icon: '🚗', type: 'expense' },
-  { name: 'Shopping', color: '#EC4899', icon: '🛍️', type: 'expense' },
-  { name: 'Entertainment', color: '#F97316', icon: '🎬', type: 'expense' },
-  { name: 'Bills & Utilities', color: '#6B7280', icon: '⚡', type: 'expense' },
-  { name: 'Healthcare', color: '#DC2626', icon: '🏥', type: 'expense' },
-  { name: 'Education', color: '#7C3AED', icon: '📚', type: 'expense' },
-  { name: 'Travel', color: '#059669', icon: '✈️', type: 'expense' },
-];
+
 
 export default function AddTransactionScreen() {
   const [amount, setAmount] = useState('');
@@ -45,16 +29,22 @@ export default function AddTransactionScreen() {
   const [loading, setLoading] = useState(false);
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
   const [imageLoading, setImageLoading] = useState(false);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
 
   const { categories, addTransaction, fetchCategories } = useTransactionStore();
   const theme = useTheme();
 
   useEffect(() => {
-    fetchCategories();
+    loadCategories();
   }, []);
 
-  const availableCategories = categories.length > 0 ? categories : defaultCategories;
-  const filteredCategories = availableCategories.filter(cat => cat.type === transactionType);
+  const loadCategories = async () => {
+    setCategoriesLoading(true);
+    await fetchCategories();
+    setCategoriesLoading(false);
+  };
+
+  const filteredCategories = categories.filter(cat => cat.type === transactionType);
 
   const handleAddTransaction = async () => {
     if (!amount || !description || !selectedCategory) {
@@ -72,7 +62,7 @@ export default function AddTransactionScreen() {
     const { error } = await addTransaction({
       amount: numericAmount,
       description,
-      category_id: selectedCategory.id || selectedCategory.name,
+      category_id: selectedCategory.id,
       date,
       receipt_url: receiptImage || undefined, // Add receipt image to transaction
     });
@@ -137,10 +127,10 @@ export default function AddTransactionScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: theme.textPrimary }]}>Add Transaction</Text>
+        <View style={styles.contentHeader}>
+          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Add a new income or expense</Text>
         </View>
 
         <Card style={styles.formCard}>
@@ -248,26 +238,41 @@ export default function AddTransactionScreen() {
         {/* Category Selection */}
         <Card style={styles.categoryCard}>
           <Text style={[styles.categoryTitle, { color: theme.textPrimary }]}>Select Category</Text>
-          <View style={styles.categoryGrid}>
-            {filteredCategories.map((category) => (
-              <TouchableOpacity
-                key={category.name}
-                style={[
-                  styles.categoryItem,
-                  selectedCategory?.name === category.name && [styles.selectedCategory, { 
-                    borderColor: theme.primary, 
-                    backgroundColor: theme.background === '#111827' ? theme.surfaceSecondary : '#EFF6FF' 
-                  }],
-                ]}
-                onPress={() => setSelectedCategory(category as Category)}
-              >
-                <View style={[styles.categoryIcon, { backgroundColor: category.color }]}>
-                  <Text style={styles.categoryIconText}>{category.icon}</Text>
-                </View>
-                <Text style={[styles.categoryName, { color: theme.textSecondary }]}>{category.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          {categoriesLoading ? (
+            <View style={styles.loadingContainer}>
+              <Text style={[styles.loadingText, { color: theme.textSecondary }]}>Loading categories...</Text>
+            </View>
+          ) : filteredCategories.length > 0 ? (
+            <View style={styles.categoryGrid}>
+              {filteredCategories.map((category) => (
+                <TouchableOpacity
+                  key={category.id || category.name}
+                  style={[
+                    styles.categoryItem,
+                    selectedCategory?.id === category.id && [styles.selectedCategory, { 
+                      borderColor: theme.primary, 
+                      backgroundColor: theme.background === '#111827' ? theme.surfaceSecondary : '#EFF6FF' 
+                    }],
+                  ]}
+                  onPress={() => setSelectedCategory(category)}
+                >
+                  <View style={[styles.categoryIcon, { backgroundColor: category.color }]}>
+                    <Text style={styles.categoryIconText}>{category.icon}</Text>
+                  </View>
+                  <Text style={[styles.categoryName, { color: theme.textSecondary }]}>{category.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+                No {transactionType} categories found
+              </Text>
+              <Text style={[styles.emptySubtext, { color: theme.textTertiary }]}>
+                Please create categories in the settings first
+              </Text>
+            </View>
+          )}
         </Card>
 
         {/* Add Button */}
@@ -278,26 +283,25 @@ export default function AddTransactionScreen() {
           style={styles.addButton}
         />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 16
   },
   content: {
     flex: 1,
     paddingHorizontal: 20,
   },
-  header: {
+  contentHeader: {
     paddingTop: 20,
     paddingBottom: 24,
   },
-  title: {
-    fontSize: 28,
-    fontFamily: 'Inter-Bold',
+  subtitle: {
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
   },
   formCard: {
     marginBottom: 24,
@@ -405,5 +409,27 @@ const styles = StyleSheet.create({
   removeImageText: {
     fontSize: 14,
     fontFamily: 'Inter-Medium',
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: 32,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Medium',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 32,
+  },
+  emptyText: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    textAlign: 'center',
   },
 });

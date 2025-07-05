@@ -14,6 +14,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useTheme } from '@/hooks/useTheme';
 import { StyleSheet } from 'react-native';
 import { notificationService } from '@/lib/notifications';
+import SessionManager from '@/components/SessionManager';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -48,6 +49,7 @@ export default function RootLayout() {
 
   return (
     <>
+      <SessionManager />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="auth" />
         <Stack.Screen name="(tabs)" />

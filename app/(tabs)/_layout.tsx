@@ -1,5 +1,5 @@
 import { Tabs, Redirect } from 'expo-router';
-import { Chrome as Home, CreditCard, CirclePlus as PlusCircle, ChartPie as PieChart, ChartBar as BarChart3, Settings } from 'lucide-react-native';
+import { House, ArrowLeftRight, CirclePlus as PlusCircle, ChartPie as PieChart, ChartBar as BarChart3, Settings } from 'lucide-react-native';
 import { useAuthStore } from '@/store/authStore';
 import { useTheme } from '@/hooks/useTheme';
 
@@ -19,7 +19,18 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false,
+        headerShown: true,
+        headerStyle: {
+          backgroundColor: theme.background,
+          borderBottomWidth: 1,
+          borderBottomColor: theme.border,
+        },
+        headerTitleStyle: {
+          fontSize: 20,
+          fontFamily: 'Inter-Bold',
+          color: theme.textPrimary,
+        },
+        headerShadowVisible: false,
         tabBarActiveTintColor: theme.tabBarActive,
         tabBarInactiveTintColor: theme.tabBarInactive,
         tabBarStyle: {
@@ -41,7 +52,7 @@ export default function TabLayout() {
         options={{
           title: 'Dashboard',
           tabBarIcon: ({ size, color }) => (
-            <Home size={size} color={color} />
+            <House size={size} color={color} />
           ),
         }}
       />
@@ -50,7 +61,7 @@ export default function TabLayout() {
         options={{
           title: 'Transactions',
           tabBarIcon: ({ size, color }) => (
-            <CreditCard size={size} color={color} />
+            <ArrowLeftRight size={size} color={color} />
           ),
         }}
       />

@@ -18,6 +18,7 @@ import ThemeModal from '@/components/ThemeModal';
 import ProfileModal from '@/components/ProfileModal';
 import NotificationModal from '@/components/NotificationModal';
 import ExportModal from '@/components/ExportModal';
+import SecurityModal from '@/components/SecurityModal';
 
 const settingsItems = [
   {
@@ -72,6 +73,7 @@ export default function SettingsScreen() {
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [notificationModalVisible, setNotificationModalVisible] = useState(false);
   const [exportModalVisible, setExportModalVisible] = useState(false);
+  const [securityModalVisible, setSecurityModalVisible] = useState(false);
 
   const handleSignOut = () => {
     Alert.alert(
@@ -100,7 +102,7 @@ export default function SettingsScreen() {
         setNotificationModalVisible(true);
         break;
       case 'security':
-        Alert.alert('Security', 'Security settings coming soon!');
+        setSecurityModalVisible(true);
         break;
       case 'export':
         setExportModalVisible(true);
@@ -115,10 +117,10 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: theme.textPrimary }]}>Settings</Text>
+        <View style={styles.contentHeader}>
+          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Manage your account and preferences</Text>
         </View>
 
         {/* User Profile Card */}
@@ -210,26 +212,31 @@ export default function SettingsScreen() {
         visible={exportModalVisible}
         onClose={() => setExportModalVisible(false)}
       />
-    </SafeAreaView>
+      
+      {/* Security Modal */}
+      <SecurityModal
+        visible={securityModalVisible}
+        onClose={() => setSecurityModalVisible(false)}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 16
   },
   content: {
     flex: 1,
     paddingHorizontal: 20,
   },
-  header: {
+  contentHeader: {
     paddingTop: 20,
     paddingBottom: 24,
   },
-  title: {
-    fontSize: 28,
-    fontFamily: 'Inter-Bold',
+  subtitle: {
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
   },
   profileCard: {
     marginBottom: 24,

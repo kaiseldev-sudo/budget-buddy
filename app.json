@@ -21,15 +21,13 @@
       "expo-font",
       "expo-web-browser",
       "expo-file-system",
-      "expo-sharing",
-      "expo-print",
       [
         "expo-notifications",
         {
           "icon": "./assets/images/icon.png",
           "color": "#ffffff",
           "sounds": [
-            "./assets/sounds/notification.wav"
+            "./assets/sounds/notification.mp3"
           ]
         }
       ]
